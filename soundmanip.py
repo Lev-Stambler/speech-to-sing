@@ -1,11 +1,9 @@
 import pydub
 import numpy
 import math
-import scipy.io.wavfile
+import musicfreq
+import wav_lib
 import numpy.fft as fft
-
-def save_wav(data, rate, word):
-  scipy.io.wavfile.write(f"sounds-music/{word}.wav", rate, data)
 
 def read_mp3(f, normalized=False):
   """MP3 to numpy array"""
@@ -36,14 +34,13 @@ def analyze(data, sr):
   period_sigma = 0
   for period in indiv_periods:
     period_sigma += period
-  return (1 / (period_sigma / len(indiv_periods)), change_indexes)
+  return (1 / (period_sigma / len(indiv_periods)) / 2, change_indexes)
 
 def change_pitch(data, factor, change_indexes):
   new_data = []
   for i in range(0, data[change_indexes[0]]):
     new_data.append(data[i])
   for i in range(0, len(change_indexes) - 1):
-    print(change_indexes[i], change_indexes[i+1])
     data_inbetween_count = change_indexes[i + 1] - change_indexes[i]
     filled_in = 0
     count = 0
@@ -53,24 +50,22 @@ def change_pitch(data, factor, change_indexes):
       filled_in += factor
       count += 1
     while count < data_inbetween_count:
-      new_data.append(0)
+      new_data.append(data[0]) # TODO make this better, data[0] should be 0 as it already padded
       count += 1
-  print(change_indexes[0], change_indexes[-1])
   for i in range(change_indexes[-1], len(data)):
     new_data.append(data[i])
     pass
   np_new_data = numpy.asarray(new_data)
-  print(np_new_data)
   return np_new_data
 
-def make_freq(word, note):
+def make_freq(word, note, i):
   sr, data = read_mp3(f"sounds/{word}.mp3")
-  freq, change_indexes = analyze(data, sr)
-  print(f"The word {word} frequency is {freq}")
-  pitch_factor = 1
+  average_freq, change_indexes = analyze(data, sr)
+  pitch_factor = musicfreq.freq(note) / average_freq
+  print(f"The word '{word}' frequency is {average_freq} and will be modified by a factor of {pitch_factor}")
   data_new_pitch = change_pitch(data, pitch_factor, change_indexes)
-  print(len(data), len(data_new_pitch))
-  save_wav(data_new_pitch, sr, word)
+  print(f"The data lens compare by a factor of {len(data) / len(data_new_pitch)}")
+  wav_lib.save_wav(data_new_pitch, sr, f"sounds-music/{i}.wav")
 
 # spectrum = fft.fft(data)
 #   freqs = fft.fftfreq(len(spectrum))
