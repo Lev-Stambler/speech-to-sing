@@ -6,8 +6,8 @@ import soundmanip
 def get_text(text_path):
   f = open(text_path, "r")
   contents = f.read()
-  print(text_path)
-  print(contents)
+  print("text path:", text_path)
+  print("text contents: ", contents)
   f.close()
   return contents
 
@@ -19,7 +19,6 @@ def make_to_audio(words):
 
 def main():
   text_path = "words.txt"
-  print(sys.argv)
   if len(sys.argv) > 1 and sys.argv[1] != "":
     text_path = sys.argv[1]
   text = get_text(text_path)
