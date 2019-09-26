@@ -44,7 +44,7 @@ def change_pitch(data, factor, change_indexes):
     data_inbetween_count = change_indexes[i + 1] - change_indexes[i]
     filled_in = 0
     count = 0
-    while filled_in < data_inbetween_count:
+    while filled_in < data_inbetween_count and count < data_inbetween_count:
       data_i = change_indexes[i] + math.floor(filled_in)
       new_data.append(data[data_i])
       filled_in += factor
@@ -54,17 +54,32 @@ def change_pitch(data, factor, change_indexes):
       count += 1
   for i in range(change_indexes[-1], len(data)):
     new_data.append(data[i])
-    pass
   np_new_data = numpy.asarray(new_data)
   return np_new_data
 
-def make_freq(word, note, i):
-  sr, data = read_mp3(f"sounds/{word}.mp3")
-  average_freq, change_indexes = analyze(data, sr)
+def change_duration(data, duration_factor):
+  new_data = []
+  count = 0
+  while count < len(data):
+    new_data.append(data[math.floor(count)])
+    count += duration_factor
+  np_new_data = numpy.asarray(new_data)
+  return np_new_data
+
+def make_word(word, note, duration_ms, i):
+  path_wav = f"sounds/{str(word)}.wav"
+  path_mp3 = f"sounds/{str(word)}.mp3"
+  sr, data = read_mp3(path_mp3)
+  
+  duration_factor = duration_ms / wav_lib.wav_len_ms(path_wav)
+  data_new_duration = change_duration(data, duration_factor)
+  average_freq, change_indexes = analyze(data_new_duration, sr)
   pitch_factor = musicfreq.freq(note) / average_freq
+  
   print(f"The word '{word}' frequency is {average_freq} and will be modified by a factor of {pitch_factor}")
-  data_new_pitch = change_pitch(data, pitch_factor, change_indexes)
-  print(f"The data lens compare by a factor of {len(data) / len(data_new_pitch)}")
+  data_new_pitch = change_pitch(data_new_duration, pitch_factor, change_indexes)
+  
+  print(f"The data lens compare by a factor of {len(data_new_duration) / len(data_new_pitch)}")
   wav_lib.save_wav(data_new_pitch, sr, f"sounds-music/{i}.wav")
 
 # spectrum = fft.fft(data)
@@ -75,4 +90,3 @@ def make_freq(word, note, i):
 #       print('{c:>6} * exp(2 pi i t * {f})'.format(c=coef,f=freq))
 #   # freq = fft.fftfreq(len(spectrum)) * sr
 #   # print(f"original frequency: {freq}")
-
